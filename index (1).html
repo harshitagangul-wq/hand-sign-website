@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SignSense – Hand Sign Detection App</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --purple: #7C3AED;
+      --pink:   #EC4899;
+      --cyan:   #06B6D4;
+      --yellow: #FBBF24;
+      --green:  #10B981;
+      --dark:   #0F0A1E;
+      --card:   #1A1035;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: var(--dark);
+      color: #fff;
+      overflow-x: hidden;
+    }
+
+    /* ── NAVBAR ── */
+    nav {
+      position: fixed; top: 0; width: 100%; z-index: 100;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1rem 2.5rem;
+      background: rgba(15,10,30,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(124,58,237,0.3);
+    }
+    .logo {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.3rem;
+      background: linear-gradient(90deg, var(--purple), var(--pink), var(--cyan));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a {
+      color: #ccc; text-decoration: none; font-weight: 600;
+      transition: color .3s;
+    }
+    .nav-links a:hover { color: var(--cyan); }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center;
+      padding: 7rem 2rem 4rem;
+      position: relative; overflow: hidden;
+    }
+    .hero-bg {
+      position: absolute; inset: 0; z-index: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 20% 40%, rgba(124,58,237,0.35) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 40% at 80% 60%, rgba(6,182,212,0.3) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 35% at 50% 20%, rgba(236,72,153,0.25) 0%, transparent 60%);
+    }
+    .floating-signs {
+      position: absolute; inset: 0; z-index: 0; pointer-events: none;
+    }
+    .sign-bubble {
+      position: absolute;
+      font-size: 3rem;
+      opacity: 0.12;
+      animation: floatUp 8s infinite ease-in-out;
+    }
+    .sign-bubble:nth-child(1){ left:5%;  top:70%; animation-delay:0s;   font-size:2.5rem; }
+    .sign-bubble:nth-child(2){ left:15%; top:20%; animation-delay:1.5s; font-size:4rem; }
+    .sign-bubble:nth-child(3){ left:80%; top:60%; animation-delay:3s;   font-size:3.5rem; }
+    .sign-bubble:nth-child(4){ left:70%; top:15%; animation-delay:0.8s; font-size:2rem; }
+    .sign-bubble:nth-child(5){ left:50%; top:80%; animation-delay:2.2s; font-size:5rem; }
+    .sign-bubble:nth-child(6){ left:90%; top:40%; animation-delay:4s;   font-size:2.8rem; }
+    @keyframes floatUp {
+      0%,100%{ transform: translateY(0) rotate(-5deg); opacity:.1; }
+      50%    { transform: translateY(-30px) rotate(5deg); opacity:.2; }
+    }
+
+    .hero-content { position: relative; z-index: 1; max-width: 800px; }
+
+    .badge {
+      display: inline-block;
+      background: linear-gradient(90deg,var(--purple),var(--pink));
+      padding: .35rem 1.2rem; border-radius: 50px;
+      font-size: .85rem; font-weight: 700; letter-spacing: .05em;
+      margin-bottom: 1.5rem; text-transform: uppercase;
+    }
+
+    h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(2.5rem, 7vw, 5rem);
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+    }
+    .gradient-text {
+      background: linear-gradient(135deg, var(--purple) 0%, var(--pink) 40%, var(--cyan) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    .hero p {
+      font-size: 1.2rem; color: #c4b5fd; max-width: 580px;
+      margin: 0 auto 2.5rem; line-height: 1.7;
+    }
+
+    .hero-btns { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+
+    .btn-primary {
+      padding: .85rem 2.2rem; border-radius: 50px; border: none;
+      background: linear-gradient(135deg, var(--purple), var(--pink));
+      color: #fff; font-family: 'Nunito', sans-serif;
+      font-size: 1rem; font-weight: 800; cursor: pointer;
+      text-decoration: none;
+      box-shadow: 0 0 25px rgba(236,72,153,0.5);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 0 40px rgba(236,72,153,0.7); }
+
+    .btn-outline {
+      padding: .85rem 2.2rem; border-radius: 50px;
+      border: 2px solid var(--cyan); background: transparent;
+      color: var(--cyan); font-family: 'Nunito', sans-serif;
+      font-size: 1rem; font-weight: 800; cursor: pointer;
+      text-decoration: none;
+      transition: background .2s, color .2s;
+    }
+    .btn-outline:hover { background: var(--cyan); color: var(--dark); }
+
+    /* ── HAND ANIMATION ── */
+    .hand-hero {
+      margin: 3rem auto 0;
+      width: 180px; height: 180px;
+      background: linear-gradient(135deg, var(--purple), var(--cyan));
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 6rem;
+      box-shadow: 0 0 60px rgba(124,58,237,0.6), 0 0 120px rgba(6,182,212,0.3);
+      animation: pulse 2.5s ease-in-out infinite;
+      position: relative; z-index: 1;
+    }
+    @keyframes pulse {
+      0%,100%{ transform: scale(1);     box-shadow: 0 0 60px rgba(124,58,237,0.6); }
+      50%    { transform: scale(1.06);  box-shadow: 0 0 90px rgba(124,58,237,0.9), 0 0 140px rgba(6,182,212,0.4); }
+    }
+
+    /* ── SECTION SHARED ── */
+    section { padding: 6rem 2rem; }
+    .section-label {
+      text-align: center;
+      font-size: .8rem; font-weight: 700; letter-spacing: .15em;
+      text-transform: uppercase; color: var(--cyan);
+      margin-bottom: .6rem;
+    }
+    .section-title {
+      text-align: center;
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(1.6rem, 4vw, 2.5rem);
+      margin-bottom: 1rem;
+    }
+    .section-sub {
+      text-align: center; color: #a78bfa;
+      max-width: 540px; margin: 0 auto 3.5rem;
+      font-size: 1rem; line-height: 1.6;
+    }
+    .divider {
+      width: 60px; height: 4px; border-radius: 4px;
+      background: linear-gradient(90deg, var(--purple), var(--pink));
+      margin: .8rem auto 2rem;
+    }
+
+    /* ── HOW IT WORKS ── */
+    #how { background: linear-gradient(180deg, var(--dark) 0%, #110824 100%); }
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 2rem; max-width: 1100px; margin: 0 auto;
+    }
+    .step-card {
+      background: var(--card);
+      border: 1px solid rgba(124,58,237,0.3);
+      border-radius: 20px; padding: 2rem 1.5rem;
+      text-align: center;
+      transition: transform .3s, border-color .3s;
+      position: relative; overflow: hidden;
+    }
+    .step-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--purple), var(--cyan));
+    }
+    .step-card:hover { transform: translateY(-8px); border-color: var(--purple); }
+    .step-num {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 2.5rem; font-weight: 900;
+      background: linear-gradient(135deg, var(--purple), var(--pink));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      margin-bottom: .5rem;
+    }
+    .step-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+    .step-card h3 { font-size: 1.1rem; margin-bottom: .6rem; color: #e2d9f3; }
+    .step-card p  { color: #9478c4; font-size: .93rem; line-height: 1.6; }
+
+    /* ── FEATURES ── */
+    #features { background: #0d0720; }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.8rem; max-width: 1100px; margin: 0 auto;
+    }
+    .feat-card {
+      border-radius: 20px; padding: 2rem;
+      position: relative; overflow: hidden;
+      transition: transform .3s;
+    }
+    .feat-card:hover { transform: translateY(-6px) scale(1.02); }
+    .feat-card.purple { background: linear-gradient(135deg,#2d1b69,#1a0f40); border: 1px solid rgba(124,58,237,0.5); }
+    .feat-card.pink   { background: linear-gradient(135deg,#4a1030,#1f0820); border: 1px solid rgba(236,72,153,0.5); }
+    .feat-card.cyan   { background: linear-gradient(135deg,#0c3040,#041520); border: 1px solid rgba(6,182,212,0.5); }
+    .feat-card.green  { background: linear-gradient(135deg,#0c3020,#041510); border: 1px solid rgba(16,185,129,0.5); }
+    .feat-card.yellow { background: linear-gradient(135deg,#3a2800,#1a1000); border: 1px solid rgba(251,191,36,0.5); }
+    .feat-card.indigo { background: linear-gradient(135deg,#1e1b4b,#0d0b2a); border: 1px solid rgba(99,102,241,0.5); }
+    .feat-icon { font-size: 2.8rem; margin-bottom: 1rem; }
+    .feat-card h3 { font-size: 1.15rem; margin-bottom: .5rem; }
+    .feat-card p  { color: #a89bc8; font-size: .9rem; line-height: 1.6; }
+
+    /* ── SIGNS DETECTED ── */
+    #signs { background: linear-gradient(180deg, #0d0720 0%, var(--dark) 100%); }
+    .signs-row {
+      display: flex; justify-content: center; gap: 1.5rem;
+      flex-wrap: wrap; max-width: 900px; margin: 0 auto;
+    }
+    .sign-card {
+      width: 180px; border-radius: 20px; padding: 2rem 1rem;
+      text-align: center; cursor: default;
+      transition: transform .3s, box-shadow .3s;
+    }
+    .sign-card:hover { transform: translateY(-10px) rotate(2deg); }
+    .sign-card.a { background: linear-gradient(135deg,#7C3AED,#4C1D95); box-shadow: 0 8px 30px rgba(124,58,237,0.4); }
+    .sign-card.b { background: linear-gradient(135deg,#EC4899,#831843); box-shadow: 0 8px 30px rgba(236,72,153,0.4); }
+    .sign-card.c { background: linear-gradient(135deg,#06B6D4,#164E63); box-shadow: 0 8px 30px rgba(6,182,212,0.4); }
+    .sign-card.d { background: linear-gradient(135deg,#10B981,#064E3B); box-shadow: 0 8px 30px rgba(16,185,129,0.4); }
+    .sign-emoji { font-size: 4rem; margin-bottom: .8rem; display: block; }
+    .sign-letter {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 2.5rem; font-weight: 900; display: block;
+      margin-bottom: .4rem;
+    }
+    .sign-label { font-size: .85rem; opacity: .8; }
+    .confidence {
+      margin-top: .8rem;
+      background: rgba(255,255,255,0.15);
+      border-radius: 50px; padding: .2rem .8rem;
+      font-size: .8rem; font-weight: 700;
+    }
+
+    /* ── SCREENSHOTS ── */
+    #screenshots { background: #090616; }
+    .shots-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 2rem; max-width: 900px; margin: 0 auto;
+    }
+    .shot-wrap {
+      border-radius: 20px; overflow: hidden;
+      border: 2px solid rgba(124,58,237,0.4);
+      transition: transform .3s, border-color .3s;
+      background: var(--card);
+    }
+    .shot-wrap:hover { transform: scale(1.03); border-color: var(--pink); }
+    .shot-top {
+      background: linear-gradient(90deg,var(--purple),var(--pink));
+      padding: .6rem 1rem; font-size: .8rem; font-weight: 700;
+      display: flex; align-items: center; gap: .5rem;
+    }
+    .shot-wrap img {
+      width: 100%; display: block;
+      object-fit: cover;
+    }
+    .shot-caption {
+      padding: 1rem; color: #a78bfa; font-size: .9rem; font-weight: 600;
+    }
+
+    /* ── TECH STACK ── */
+    #tech { background: linear-gradient(180deg, #090616 0%, var(--dark) 100%); }
+    .tech-pills {
+      display: flex; flex-wrap: wrap; justify-content: center;
+      gap: 1rem; max-width: 800px; margin: 0 auto;
+    }
+    .tech-pill {
+      display: flex; align-items: center; gap: .6rem;
+      padding: .7rem 1.5rem; border-radius: 50px;
+      font-weight: 700; font-size: .95rem;
+      transition: transform .2s;
+    }
+    .tech-pill:hover { transform: scale(1.08); }
+    .tp1 { background: rgba(124,58,237,0.2); border: 2px solid var(--purple); color: #c4b5fd; }
+    .tp2 { background: rgba(236,72,153,0.2); border: 2px solid var(--pink);   color: #fbcfe8; }
+    .tp3 { background: rgba(6,182,212,0.2);  border: 2px solid var(--cyan);   color: #a5f3fc; }
+    .tp4 { background: rgba(251,191,36,0.2); border: 2px solid var(--yellow); color: #fef3c7; }
+    .tp5 { background: rgba(16,185,129,0.2); border: 2px solid var(--green);  color: #a7f3d0; }
+
+    /* ── DOWNLOAD ── */
+    #download {
+      background: linear-gradient(135deg, #1a0a3e 0%, #0a1a3e 50%, #0a2a1e 100%);
+      text-align: center; padding: 7rem 2rem;
+      position: relative; overflow: hidden;
+    }
+    #download::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 70% 60% at 50% 50%, rgba(124,58,237,0.2) 0%, transparent 70%);
+    }
+    #download .inner { position: relative; z-index: 1; }
+    #download h2 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      margin-bottom: 1rem;
+    }
+    #download p { color: #a78bfa; font-size: 1.1rem; margin-bottom: 2.5rem; }
+    .download-btns { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+
+    /* ── FOOTER ── */
+    footer {
+      background: #07040f;
+      text-align: center; padding: 2rem;
+      border-top: 1px solid rgba(124,58,237,0.2);
+      color: #6b5ea8; font-size: .9rem;
+    }
+    footer span { color: var(--pink); }
+
+    /* ── SCROLL REVEAL ── */
+    .reveal {
+      opacity: 0; transform: translateY(30px);
+      transition: opacity .7s ease, transform .7s ease;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    @media(max-width:640px){
+      .nav-links { display: none; }
+      .shots-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+  <div class="logo">✋ SignSense</div>
+  <ul class="nav-links">
+    <li><a href="#how">How it Works</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#signs">Signs</a></li>
+    <li><a href="#screenshots">Screenshots</a></li>
+    <li><a href="#download">Download</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="floating-signs">
+    <span class="sign-bubble">🤟</span>
+    <span class="sign-bubble">✋</span>
+    <span class="sign-bubble">🖐️</span>
+    <span class="sign-bubble">👋</span>
+    <span class="sign-bubble">🤙</span>
+    <span class="sign-bubble">👌</span>
+  </div>
+  <div class="hero-content">
+    <div class="badge">🤖 AI-Powered · MIT App Inventor</div>
+    <h1>Detect Hand Signs<br><span class="gradient-text">In Real Time</span></h1>
+    <p>SignSense uses your phone's camera and a Teachable Machine ML model to recognize hand sign letters A, B, C, D — instantly and accurately.</p>
+    <div class="hero-btns">
+      <a href="#download" class="btn-primary">📥 Download App</a>
+      <a href="#how" class="btn-outline">🔍 See How It Works</a>
+    </div>
+    <div class="hand-hero">🤟</div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how">
+  <p class="section-label">Process</p>
+  <h2 class="section-title">How It <span class="gradient-text">Works</span></h2>
+  <div class="divider"></div>
+  <p class="section-sub">Three simple steps — from camera to classification in seconds.</p>
+  <div class="steps reveal">
+    <div class="step-card">
+      <div class="step-num">01</div>
+      <div class="step-icon">📲</div>
+      <h3>Open the App</h3>
+      <p>Launch SignSense on your Android phone. The Teachable Machine model loads automatically.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">02</div>
+      <div class="step-icon">✋</div>
+      <h3>Show Your Hand Sign</h3>
+      <p>Hold up a hand sign (A, B, C, or D) in front of your camera and tap the Classify button.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">03</div>
+      <div class="step-icon">📊</div>
+      <h3>See the Result</h3>
+      <p>The app instantly shows the confidence % for each detected sign — live and in real time!</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">04</div>
+      <div class="step-icon">🔁</div>
+      <h3>Repeat &amp; Learn</h3>
+      <p>Practice different signs and improve your accuracy. Great for sign language learning!</p>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features">
+  <p class="section-label">Capabilities</p>
+  <h2 class="section-title">Packed with <span class="gradient-text">Features</span></h2>
+  <div class="divider"></div>
+  <p class="section-sub">Everything you need for accurate hand sign detection.</p>
+  <div class="features-grid reveal">
+    <div class="feat-card purple">
+      <div class="feat-icon">🤖</div>
+      <h3>ML-Powered Detection</h3>
+      <p>Powered by Google Teachable Machine — a custom trained image classification model for accurate sign detection.</p>
+    </div>
+    <div class="feat-card pink">
+      <div class="feat-icon">📷</div>
+      <h3>Live Camera Feed</h3>
+      <p>Uses WebViewer to stream real-time video from your phone camera for instant classification.</p>
+    </div>
+    <div class="feat-card cyan">
+      <div class="feat-icon">📊</div>
+      <h3>Confidence Scores</h3>
+      <p>Displays confidence percentage for each sign (A, B, C, D) so you know exactly how accurate the detection is.</p>
+    </div>
+    <div class="feat-card green">
+      <div class="feat-icon">⚡</div>
+      <h3>Real-Time Results</h3>
+      <p>Get classification results in seconds — no waiting, no lag. Just fast and smooth detection.</p>
+    </div>
+    <div class="feat-card yellow">
+      <div class="feat-icon">📱</div>
+      <h3>Android Compatible</h3>
+      <p>Built for Android 5+ devices. Works on any modern Android smartphone without special hardware.</p>
+    </div>
+    <div class="feat-card indigo">
+      <div class="feat-icon">♿</div>
+      <h3>Accessibility Focused</h3>
+      <p>Designed to help with sign language learning and communication for the hearing-impaired community.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SIGNS DETECTED -->
+<section id="signs">
+  <p class="section-label">Detection Classes</p>
+  <h2 class="section-title">Signs It Can <span class="gradient-text">Detect</span></h2>
+  <div class="divider"></div>
+  <p class="section-sub">The app currently recognizes 4 hand sign letters using its trained ML model.</p>
+  <div class="signs-row reveal">
+    <div class="sign-card a">
+      <span class="sign-emoji">🤙</span>
+      <span class="sign-letter">A</span>
+      <span class="sign-label">Sign Letter A</span>
+      <div class="confidence">Up to 99% accuracy</div>
+    </div>
+    <div class="sign-card b">
+      <span class="sign-emoji">✋</span>
+      <span class="sign-letter">B</span>
+      <span class="sign-label">Sign Letter B</span>
+      <div class="confidence">Up to 99% accuracy</div>
+    </div>
+    <div class="sign-card c">
+      <span class="sign-emoji">🤌</span>
+      <span class="sign-letter">C</span>
+      <span class="sign-label">Sign Letter C</span>
+      <div class="confidence">Up to 99% accuracy</div>
+    </div>
+    <div class="sign-card d">
+      <span class="sign-emoji">👆</span>
+      <span class="sign-letter">D</span>
+      <span class="sign-label">Sign Letter D</span>
+      <div class="confidence">Up to 99% accuracy</div>
+    </div>
+  </div>
+</section>
+
+<!-- SCREENSHOTS -->
+<section id="screenshots">
+  <p class="section-label">App Preview</p>
+  <h2 class="section-title">See It In <span class="gradient-text">Action</span></h2>
+  <div class="divider"></div>
+  <p class="section-sub">A look inside the app — both the UI design and the block-based logic.</p>
+  <div class="shots-grid reveal">
+    <div class="shot-wrap">
+      <div class="shot-top">🎨 Designer View — App UI Layout</div>
+      <img src="screenshots/designer_screen.jpeg" alt="Designer Screen" />
+      <div class="shot-caption">📱 The app's visual layout with WebViewer, Labels & Button</div>
+    </div>
+    <div class="shot-wrap">
+      <div class="shot-top">🧩 Blocks View — App Logic</div>
+      <img src="screenshots/blocks_screen.jpeg" alt="Blocks Screen" />
+      <div class="shot-caption">⚙️ Block-based programming for real-time sign classification</div>
+    </div>
+  </div>
+</section>
+
+<!-- TECH STACK -->
+<section id="tech">
+  <p class="section-label">Technology</p>
+  <h2 class="section-title">Built With</h2>
+  <div class="divider"></div>
+  <p class="section-sub">A powerful combination of no-code and AI tools.</p>
+  <div class="tech-pills reveal">
+    <div class="tech-pill tp1">📱 MIT App Inventor</div>
+    <div class="tech-pill tp2">🤖 Google Teachable Machine</div>
+    <div class="tech-pill tp3">🌐 WebViewer Component</div>
+    <div class="tech-pill tp4">🧩 Image Classifier Extension</div>
+    <div class="tech-pill tp5">☁️ TensorFlow.js (via model)</div>
+  </div>
+</section>
+
+<!-- DOWNLOAD -->
+<section id="download">
+  <div class="inner">
+    <h2 class="gradient-text">Try SignSense Today</h2>
+    <p>Download the project and explore it in MIT App Inventor — it's completely free and open source!</p>
+    <div class="download-btns">
+      <a href="Hand_sign.aia" download class="btn-primary">📥 Download .aia File</a>
+      <a href="https://appinventor.mit.edu" target="_blank" class="btn-outline">🔗 Open in App Inventor</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p>Made with 💜 by <span>Parineeta Dhavad</span> · Built with MIT App Inventor &amp; Google Teachable Machine</p>
+  <p style="margin-top:.5rem; font-size:.8rem;">© 2026 SignSense · Hand Sign Detection App</p>
+</footer>
+
+<script>
+  // Scroll reveal
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.15 });
+  reveals.forEach(r => observer.observe(r));
+</script>
+</body>
+</html>
